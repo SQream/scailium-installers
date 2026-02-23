@@ -65,6 +65,51 @@ sudo cp -r /etc/sqream /etc/sqream_etc_backup_$today
 logit "Success: /etc/sqream >  backup to sqream_etc_backup_$today"
 fi
 }
+################################### iceberg_service ############################################################################################
+iceberg_service(){
+logit "Started: iceberg service install"
+echo '
+[Unit]
+Description=Iceberg Service for Scailium Engine
+Documentation=http://docs.sqream.com/latest/manual/
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+EnvironmentFile=/etc/sqream/iceberg-service.conf
+ExecStartPre=/bin/bash -c 'source /etc/sqream/iceberg-service.conf'
+ExecStart=/bin/su -p $RUN_USER -c "${JAVA_HOME}/bin/java -Xss${TMEM} -Xmx${MEM} ${JAVA_EXTRA_OPTS} -jar ${BINDIR}/${JAR} --server.port=${ICEBERG_SERVICE_PORT} >> ${LOGFILE} 2>&1"
+# Capture the *java* PID (not the wrapper bash)
+ExecStartPost=/bin/sh -c 'sleep 1; pgrep -u $RUN_USER -n -f "java .* -jar ${BINDIR}/${JAR} .*--server\.port=${ICEBERG_SERVICE_PORT}([[:space:]]|$)" > /var/run/iceberg-service.pid'
+ExecStop=/bin/sh -c 'kill -TERM $(cat /var/run/iceberg-service.pid)'
+ExecStopPost=/bin/sh -c 'sleep 2; kill -KILL $(cat /var/run/iceberg-service.pid) 2>/dev/null || true'
+ExecStopPost=/bin/rm -f /var/run/iceberg-service.pid
+KillMode=process
+TimeoutSec=30s
+Restart=no
+[Install]
+WantedBy=multi-user.target
+' > /usr/lib/systemd/system/iceberg-service.service
+sudo systemctl daemon-reload
+logit "Success: iceberg service install"
+}
+######################################## iceberg service conf ##################################################################################
+iceberg_service_conf(){
+logit "Started: iceberg service conf install"
+echo '
+JAVA_HOME=/usr/local/sqream/hdfs/jdk
+BINDIR=/usr/local/sqream/bin
+RUN_USER=sqream
+JAR=iceberg-service.jar
+ICEBERG_SERVICE_PORT=6669
+LOGFILE=/var/log/sqream/iceberg-service.log
+TMEM=16m
+MEM=2g
+JAVA_EXTRA_OPTS="-XX:+ExitOnOutOfMemoryError"
+' > /etc/sqream/iceberg-service.conf
+sudo chown -R sqream:sqream /etc/sqream
+logit "Success: iceberg service conf install"
+}
 ############################## Prepare_for_SQream ############################################################################################
 Prepare_for_SQream () {
 logit "Started Prepare_for_SQream "
