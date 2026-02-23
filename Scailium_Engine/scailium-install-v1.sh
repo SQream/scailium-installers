@@ -110,6 +110,17 @@ JAVA_EXTRA_OPTS="-XX:+ExitOnOutOfMemoryError"
 sudo chown -R sqream:sqream /etc/sqream
 logit "Success: iceberg service conf install"
 }
+############################# Icberg Monit ###############################################################
+iceberg_monit(){
+logit "Started: iceberg_monit"
+echo '
+check process iceberg with pidfile /var/run/iceberg-service.pid
+start program =  "/usr/bin/systemctl start iceberg-service.service"
+stop program =  "/usr/bin/systemctl stop iceberg-service.service"
+'| sudo tee -a   /etc/monit.d/monitrc >> /dev/null
+sudo monit reload all
+logit "Success: iceberg_monit"
+}
 ############################## Prepare_for_SQream ############################################################################################
 Prepare_for_SQream () {
 logit "Started Prepare_for_SQream "
@@ -4965,6 +4976,14 @@ shift;
   sudo systemctl start monit 
   sudo monit reload &> /dev/null
   end_mig
+  shift;
+  ;; 
+-iceberg|--sqreamdb_with_iceberg_support)
+ shift;
+  run_with_sudo
+  iceberg_service_conf
+  iceberg_service
+  iceberg_monit
   shift;
   ;;  
   
