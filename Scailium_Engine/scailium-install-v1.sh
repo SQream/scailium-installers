@@ -68,18 +68,25 @@ fi
 ################################### iceberg_service ############################################################################################
 iceberg_service(){
 logit "Started: iceberg service install"
-echo '
+if ! [ -f  /usr/lib/systemd/system/md-service.service ]; 
+then
+echo "#########################"
+echo "CBO not installed"
+echo "#########################"
+exit
+else
+sudo tee /etc/systemd/system/iceberg.service > /dev/null <<'EOF'
 [Unit]
 Description=Iceberg Service for Scailium Engine
 Documentation=http://docs.sqream.com/latest/manual/
 After=network-online.target
 Wants=network-online.target
+
 [Service]
 Type=simple
 EnvironmentFile=/etc/sqream/iceberg-service.conf
 ExecStartPre=/bin/bash -c 'source /etc/sqream/iceberg-service.conf'
 ExecStart=/bin/su -p $RUN_USER -c "${JAVA_HOME}/bin/java -Xss${TMEM} -Xmx${MEM} ${JAVA_EXTRA_OPTS} -jar ${BINDIR}/${JAR} --server.port=${ICEBERG_SERVICE_PORT} >> ${LOGFILE} 2>&1"
-# Capture the *java* PID (not the wrapper bash)
 ExecStartPost=/bin/sh -c 'sleep 1; pgrep -u $RUN_USER -n -f "java .* -jar ${BINDIR}/${JAR} .*--server\.port=${ICEBERG_SERVICE_PORT}([[:space:]]|$)" > /var/run/iceberg-service.pid'
 ExecStop=/bin/sh -c 'kill -TERM $(cat /var/run/iceberg-service.pid)'
 ExecStopPost=/bin/sh -c 'sleep 2; kill -KILL $(cat /var/run/iceberg-service.pid) 2>/dev/null || true'
@@ -87,10 +94,12 @@ ExecStopPost=/bin/rm -f /var/run/iceberg-service.pid
 KillMode=process
 TimeoutSec=30s
 Restart=no
+
 [Install]
 WantedBy=multi-user.target
-' > /usr/lib/systemd/system/iceberg-service.service
+EOF
 sudo systemctl daemon-reload
+fi
 logit "Success: iceberg service install"
 }
 ######################################## iceberg service conf ##################################################################################
