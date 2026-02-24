@@ -78,6 +78,7 @@ else
 cp /user/local/sqream/service/iceberg-service.service /usr/lib/systemd/system/
 sudo systemctl daemon-reload
 logit "Success: iceberg service install"
+fi
 }
 ######################################## iceberg service conf ################################################################################
 iceberg_service_conf(){
