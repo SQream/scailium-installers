@@ -75,7 +75,7 @@ echo "CBO not installed"
 echo "#########################"
 exit
 else
-cp /user/local/sqream/service/iceberg-service.service /usr/lib/systemd/system/
+cp /usr/local/sqream/service/iceberg-service.service /usr/lib/systemd/system/
 sudo systemctl daemon-reload
 logit "Success: iceberg service install"
 fi
