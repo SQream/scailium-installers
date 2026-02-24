@@ -56,7 +56,7 @@ fi
 AVAILABLE_RAM_GB=$(( TOTAL_RAM_GB -  AVAILABLE_RAM_GB ))
 }
 
-############################################ etc backup #########################################################################################
+############################################ etc backup ########################################################################################
 etc_backup () {
 logit "Started etc_backup"
 if
@@ -65,7 +65,7 @@ sudo cp -r /etc/sqream /etc/sqream_etc_backup_$today
 logit "Success: /etc/sqream >  backup to sqream_etc_backup_$today"
 fi
 }
-################################### iceberg_service ############################################################################################
+################################### iceberg_service ###########################################################################################
 iceberg_service(){
 logit "Started: iceberg service install"
 if ! [ -f  /usr/lib/systemd/system/md-service.service ]; 
@@ -75,47 +75,14 @@ echo "CBO not installed"
 echo "#########################"
 exit
 else
-sudo tee /usr/lib/systemd/system/iceberg-service.service > /dev/null <<'EOF'
-[Unit]
-Description=Iceberg Service for Scailium Engine
-Documentation=http://docs.sqream.com/latest/manual/
-After=network-online.target
-Wants=network-online.target
-[Service]
-Type=simple
-EnvironmentFile=/etc/sqream/iceberg-service.conf
-ExecStartPre=/bin/bash -c 'source /etc/sqream/iceberg-service.conf'
-ExecStart=/bin/su -p $RUN_USER -c "${JAVA_HOME}/bin/java -Xss${TMEM} -Xmx${MEM} ${JAVA_EXTRA_OPTS} -jar ${BINDIR}/${JAR} --server.port=${ICEBERG_SERVICE_PORT} >> ${LOGFILE} 2>&1"
-# Capture the *java* PID (not the wrapper bash)
-ExecStartPost=/bin/sh -c 'sleep 1; pgrep -u $RUN_USER -n -f "java .* -jar ${BINDIR}/${JAR} .*--server\.port=${ICEBERG_SERVICE_PORT}([[:space:]]|$)" > /var/run/iceberg-service.pid'
-ExecStop=/bin/sh -c 'kill -TERM $(cat /var/run/iceberg-service.pid)'
-ExecStopPost=/bin/sh -c 'sleep 2; kill -KILL $(cat /var/run/iceberg-service.pid) 2>/dev/null || true'
-ExecStopPost=/bin/rm -f /var/run/iceberg-service.pid
-KillMode=process
-TimeoutSec=30s
-Restart=no
-[Install]
-WantedBy=multi-user.target
-EOF
+cp /user/local/sqream/service/iceberg-service.service /usr/lib/systemd/system/
 sudo systemctl daemon-reload
-fi
 logit "Success: iceberg service install"
 }
-######################################## iceberg service conf ##################################################################################
+######################################## iceberg service conf ################################################################################
 iceberg_service_conf(){
 logit "Started: iceberg service conf install"
-echo '
-JAVA_HOME=/usr/local/sqream/hdfs/jdk
-BINDIR=/usr/local/sqream/bin
-RUN_USER=sqream
-JAR=iceberg-service.jar
-ICEBERG_SERVICE_PORT=6669
-LOGFILE=/var/log/sqream/iceberg-service.log
-TMEM=16m
-MEM=2g
-JAVA_EXTRA_OPTS="-XX:+ExitOnOutOfMemoryError"
-' > /etc/sqream/iceberg-service.conf
-sudo chown -R sqream:sqream /etc/sqream
+cp /usr/local/sqream/etc/iceberg-service.conf /etc/sqream/
 logit "Success: iceberg service conf install"
 }
 ############################# Icberg Monit ###############################################################
