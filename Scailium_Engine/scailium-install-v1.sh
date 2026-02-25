@@ -90,7 +90,7 @@ logit "Success: iceberg service conf install"
 iceberg_monit(){
 logit "Started: iceberg_monit"
 echo '
-check process iceberg with pidfile /var/run/iceberg-service.pid
+check process iceberg-service with pidfile /var/run/iceberg-service.pid
 start program =  "/usr/bin/systemctl start iceberg-service.service"
 stop program =  "/usr/bin/systemctl stop iceberg-service.service"
 '| sudo tee -a   /etc/monit.d/monitrc >> /dev/null
