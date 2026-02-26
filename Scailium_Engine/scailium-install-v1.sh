@@ -4433,12 +4433,17 @@ sudo cp /usr/local/sqream/service/cbo*.service /usr/lib/systemd/system/
 MD_HOST=$(cat /etc/sqream/sqream1_config.json | grep 'metadataServerIp' | sed -e 's/.*://' | sed -e 's/[" ]*//' | sed -e 's/["],$//')
 echo "##########################################################################################################################################"
 echo "Welcome to SQream CBO installer"
+if  [ -f /usr/local/sqream/hdfs/jdk/bin/java ];then
+echo "Java Not Found"
 echo "Please Enter JAVA_HOME PATH"
 read JAVA_HOME
 if  [ ! -f $JAVA_HOME/bin/java ];then
 echo "No JAVA_HOME Found"
 exit
 fi
+else 
+echo "Java Found"
+fi 
 #echo "##########################################################################################################################################"
 #echo "Please insert BACKEND HOST IP Address"
 #read BACKEND_HOST
