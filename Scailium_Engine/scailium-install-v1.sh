@@ -4443,6 +4443,7 @@ exit
 fi
 else 
 echo "Java Found"
+JAVA_HOME=/usr/local/sqream/hdfs/jdk
 fi 
 #echo "##########################################################################################################################################"
 #echo "Please insert BACKEND HOST IP Address"
