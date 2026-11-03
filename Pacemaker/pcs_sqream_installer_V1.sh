@@ -60,22 +60,38 @@ AVAILABLE_RAM_GB=$(( TOTAL_RAM_GB -  AVAILABLE_RAM_GB ))
 ########################## SPOOL MEMORY (limitQueryMemoryGB lower then 128GB) ##################################################################
 spool_memory(){
 # spoolMemoryGB must be at least 10GB lower than limitQueryMemoryGB, otherwise the SQream workers will not start
-# spoolMemoryGB lower than 4GB is too low, so each worker needs limitQueryMemoryGB of at least 14GB
+# limitQueryMemoryGB and spoolMemoryGB are limits, not reserved RAM, so a worker gets at least a minimum limit
+# (16GB on hosts with less than 20GB RAM, 20GB otherwise) as long as all workers together stay within 1.5 x RAM
 logit "Started spool_memory"
-if (( limitQueryMemoryGB < 14 )); then
-    clear
+if (( TOTAL_RAM_GB < 20 )); then
+    min_limitQueryMemoryGB=16
+else
+    min_limitQueryMemoryGB=20
+fi
+if (( limitQueryMemoryGB < min_limitQueryMemoryGB )); then
+    total_limitQueryMemoryGB=$(( number_of_workers * min_limitQueryMemoryGB ))
+    if (( total_limitQueryMemoryGB * 2 > TOTAL_RAM_GB * 3 )); then
+        clear
+        echo "##################################################################################################"
+        echo "##################################################################################################"
+        echo "# ERROR: Not enough RAM for $number_of_workers workers"
+        echo "# Each worker needs limitQueryMemoryGB of at least ${min_limitQueryMemoryGB}GB (spoolMemoryGB must be 10GB lower)"
+        echo "# $number_of_workers workers x ${min_limitQueryMemoryGB}GB = ${total_limitQueryMemoryGB}GB, more than 1.5 x ${TOTAL_RAM_GB}GB RAM"
+        echo "# Reduce the number of workers or add RAM, then run the installer again"
+        echo "# Installation stopped"
+        echo "##################################################################################################"
+        echo "##################################################################################################"
+        logit "Error: spool_memory - $number_of_workers workers x ${min_limitQueryMemoryGB}GB is more than 1.5 x ${TOTAL_RAM_GB}GB RAM, installation stopped"
+        exit 1
+    fi
     echo "##################################################################################################"
+    echo "# WARNING: limitQueryMemoryGB per worker raised from ${limitQueryMemoryGB}GB to ${min_limitQueryMemoryGB}GB"
+    echo "# $number_of_workers workers can use up to ${total_limitQueryMemoryGB}GB on a ${TOTAL_RAM_GB}GB RAM host"
     echo "##################################################################################################"
-    echo "# ERROR: limitQueryMemoryGB per worker is ${limitQueryMemoryGB}GB"
-    echo "# spoolMemoryGB must be at least 10GB lower than limitQueryMemoryGB or SQream workers will not start"
-    echo "# spoolMemoryGB must be at least 4GB, so SQream needs at least 14GB of RAM per worker"
-    echo "# Reduce the number of workers (currently $number_of_workers) or add RAM, then run the installer again"
-    echo "# Installation stopped"
-    echo "##################################################################################################"
-    echo "##################################################################################################"
-    logit "Error: spool_memory - limitQueryMemoryGB ${limitQueryMemoryGB}GB per worker is too low ($number_of_workers workers), installation stopped"
-    exit 1
-elif (( limitQueryMemoryGB < 30 )); then
+    logit "Warning: spool_memory - limitQueryMemoryGB raised from ${limitQueryMemoryGB}GB to ${min_limitQueryMemoryGB}GB, $number_of_workers workers up to ${total_limitQueryMemoryGB}GB on ${TOTAL_RAM_GB}GB RAM"
+    limitQueryMemoryGB=$min_limitQueryMemoryGB
+fi
+if (( limitQueryMemoryGB < 30 )); then
     spoolMemoryGB=$(( limitQueryMemoryGB - 10 ))
 else
     spoolMemoryGB=$(( limitQueryMemoryGB * 50 / 100 ))
