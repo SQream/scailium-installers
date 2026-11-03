@@ -1371,7 +1371,7 @@ monit () {
 logit "Started monit"
 cat <<EOF | sudo tee /etc/monit.d/monitrc > /dev/null
 set daemon  5              # check services at 30 seconds intervals
-set logfile syslog
+set log syslog
 
 #METADATASERVER-START
 check process metadataserver with pidfile /var/run/metadataserver.pid
@@ -1385,6 +1385,10 @@ stop program = "/usr/bin/systemctl stop serverpicker"
 #SERVERPICKER-END
 EOF
 sudo cp /etc/monit.d/monitrc /etc/sqream
+if [ -f /etc/monit.d/logging ]
+then
+sudo sed -i 's/^\([[:space:]]*\)set logfile/\1set log/' /etc/monit.d/logging
+fi
 logit "Success: Prepare monit Function"
 }
 ###### check_monit_service_health no meta mig ##################################################################################
@@ -1421,10 +1425,14 @@ monit_no_meta () {
 logit "Started monit_no_meta"
 cat <<EOF | sudo tee /etc/monit.d/monitrc > /dev/null
 set daemon  5              # check services at 30 seconds intervals
-set logfile syslog
+set log syslog
 
 EOF
 sudo cp /etc/monit.d/monitrc /etc/sqream
+if [ -f /etc/monit.d/logging ]
+then
+sudo sed -i 's/^\([[:space:]]*\)set logfile/\1set log/' /etc/monit.d/logging
+fi
 logit "Success: Prepare monit_no_meta Function"
 }
 ############################################## metadata_only ###############################################################################
@@ -3792,7 +3800,7 @@ monit_backup () {
 logit "Started monit_backup"
 cat <<EOF | sudo tee /etc/sqream/monitrc > /dev/null
 set daemon  5              # check services at 30 seconds intervals
-set logfile syslog
+set log syslog
 set httpd port 2812 and
 #METADATASERVER-START
 check process metadataserver with pidfile /var/run/metadataserver.pid
