@@ -57,6 +57,31 @@ else
 fi
 AVAILABLE_RAM_GB=$(( TOTAL_RAM_GB -  AVAILABLE_RAM_GB ))
 }
+########################## SPOOL MEMORY (limitQueryMemoryGB lower then 128GB) ##################################################################
+spool_memory(){
+# spoolMemoryGB must be at least 10GB lower than limitQueryMemoryGB, otherwise the SQream workers will not start
+# spoolMemoryGB lower than 4GB is too low, so each worker needs limitQueryMemoryGB of at least 14GB
+logit "Started spool_memory"
+if (( limitQueryMemoryGB < 14 )); then
+    clear
+    echo "##################################################################################################"
+    echo "##################################################################################################"
+    echo "# ERROR: limitQueryMemoryGB per worker is ${limitQueryMemoryGB}GB"
+    echo "# spoolMemoryGB must be at least 10GB lower than limitQueryMemoryGB or SQream workers will not start"
+    echo "# spoolMemoryGB must be at least 4GB, so SQream needs at least 14GB of RAM per worker"
+    echo "# Reduce the number of workers (currently $number_of_workers) or add RAM, then run the installer again"
+    echo "# Installation stopped"
+    echo "##################################################################################################"
+    echo "##################################################################################################"
+    logit "Error: spool_memory - limitQueryMemoryGB ${limitQueryMemoryGB}GB per worker is too low ($number_of_workers workers), installation stopped"
+    exit 1
+elif (( limitQueryMemoryGB < 30 )); then
+    spoolMemoryGB=$(( limitQueryMemoryGB - 10 ))
+else
+    spoolMemoryGB=$(( limitQueryMemoryGB * 50 / 100 ))
+fi
+logit "Success: spool_memory"
+}
 ###################### Start PCS Cluster #####################################################################################
 start_pcs ()
 {
@@ -841,7 +866,7 @@ echo "Limitquery = $limitQueryMemoryGB"
 echo "####################################################"
 echo "SpoolMemorey = $spoolMemoryGB"
 else
-spoolMemoryGB=$(($limitQueryMemoryGB * 50 /100 ))
+spool_memory
 echo "####################################################"
 echo "limitQueryMemoryGB lower then 128GB" 
 echo "Number of workers = $number_of_workers"
@@ -1147,7 +1172,7 @@ echo "Limitquery = $limitQueryMemoryGB"
 echo "####################################################"
 echo "SpoolMemorey = $spoolMemoryGB"
 else
-spoolMemoryGB=$(($limitQueryMemoryGB * 50 /100 ))
+spool_memory
 echo "####################################################"
 echo "limitQueryMemoryGB lower then 128GB" 
 echo "Number of workers = $number_of_workers"
